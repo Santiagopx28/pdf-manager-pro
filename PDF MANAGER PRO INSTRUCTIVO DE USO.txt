@@ -1,0 +1,394 @@
+================================================================
+     PDF MANAGER PRO — CÁMARA DE COMERCIO DE VALLEDUPAR
+              INSTRUCTIVO DE USO — Versión 1.0
+================================================================
+
+CONTENIDO
+─────────
+  1. ¿Qué es PDF Manager Pro?
+  2. Requisitos
+  3. Cómo abrir el programa
+  4. Descripción de la interfaz
+  5. Herramientas disponibles
+       5.1  Unir PDFs
+       5.2  Separar PDF
+       5.3  Eliminar páginas
+       5.4  Reordenar páginas
+       5.5  Comprimir PDF
+       5.6  Rotar páginas
+       5.7  Foliación (numeración consecutiva)
+  6. Preguntas frecuentes
+  7. Recomendaciones generales
+
+
+================================================================
+ 1. ¿QUÉ ES PDF MANAGER PRO?
+================================================================
+
+PDF Manager Pro es una herramienta de escritorio desarrollada
+para la Cámara de Comercio de Valledupar. Permite gestionar
+archivos PDF sin necesidad de conexión a internet ni de programas
+de pago como Adobe Acrobat.
+
+Con este programa puedes:
+  ✔ Unir varios PDFs en uno solo
+  ✔ Separar un PDF en partes
+  ✔ Eliminar páginas específicas
+  ✔ Cambiar el orden de las páginas
+  ✔ Comprimir PDFs para reducir su tamaño
+  ✔ Rotar páginas
+  ✔ Aplicar foliación (numeración consecutiva oficial)
+
+
+================================================================
+ 2. REQUISITOS
+================================================================
+
+  • Sistema operativo: Windows 10 / 11
+  • El archivo ejecutable: "PDF Manager Pro - CCV.exe"
+    (ubicado en la carpeta dist\)
+
+  OPCIONAL pero recomendado para comprimir PDFs con imágenes:
+  • Ghostscript (descarga gratuita en ghostscript.com/releases)
+    El programa indica si está instalado o no en la pestaña
+    de Comprimir.
+
+
+================================================================
+ 3. CÓMO ABRIR EL PROGRAMA
+================================================================
+
+  1. Ir a la carpeta dist\
+  2. Hacer doble clic en "PDF Manager Pro - CCV.exe"
+  3. El programa abre directamente, sin instalación.
+
+  NOTA: Si Windows muestra una advertencia de seguridad al abrir
+  por primera vez, haz clic en "Más información" y luego en
+  "Ejecutar de todas formas". Es normal para ejecutables sin
+  firma digital corporativa.
+
+
+================================================================
+ 4. DESCRIPCIÓN DE LA INTERFAZ
+================================================================
+
+  ┌─────────────────────────────────────────────────────────┐
+  │  📄  PDF Manager Pro    Organiza · Comprime · Separa    │  ← Encabezado
+  ├──────────────┬──────────────────────────────────────────┤
+  │ HERRAMIENTAS │                                          │
+  │              │                                          │
+  │ 🔗 Unir      │         ÁREA DE TRABAJO                  │
+  │ ✂️ Separar   │    (cambia según la herramienta          │
+  │ 🗑️ Eliminar  │         seleccionada)                    │
+  │ 🔀 Reordenar │                                          │
+  │ 🗜️ Comprimir │                                          │
+  │ 🔄 Rotar     │                                          │
+  │ 📑 Foliación │                                          │
+  ├──────────────┴──────────────────────────────────────────┤
+  │  Estado: Listo                          [Barra progreso] │  ← Barra estado
+  └─────────────────────────────────────────────────────────┘
+
+  • Menú lateral izquierdo: selecciona la herramienta.
+  • Área de trabajo: muestra las opciones de la herramienta activa.
+  • Barra de estado (abajo): indica la operación en curso.
+  • Barra de progreso (abajo derecha): se activa mientras procesa.
+
+
+================================================================
+ 5. HERRAMIENTAS DISPONIBLES
+================================================================
+
+────────────────────────────────────────────────────────────────
+ 5.1  UNIR PDFs  🔗
+────────────────────────────────────────────────────────────────
+
+PARA QUÉ SIRVE:
+  Combina dos o más archivos PDF en un solo documento, en el
+  orden que tú elijas.
+
+PASO A PASO:
+  1. Clic en "🔗  Unir PDFs" en el menú lateral.
+  2. Clic en "➕ Agregar PDFs" y selecciona los archivos.
+     (Puedes seleccionar varios a la vez con Ctrl+clic)
+  3. Usa los botones para organizar el orden:
+       ↑ Subir   → mueve el archivo seleccionado hacia arriba
+       ↓ Bajar   → mueve el archivo seleccionado hacia abajo
+       Quitar    → elimina el archivo de la lista
+       Limpiar   → borra toda la lista
+  4. Clic en "💾 Unir y Guardar".
+  5. Escoge la carpeta y el nombre del archivo resultante.
+  6. Al terminar aparece un mensaje con el número de archivos
+     y páginas combinadas.
+
+EJEMPLO:
+  Tienes 3 actas escaneadas por separado:
+    Acta01.pdf (4 págs), Acta02.pdf (3 págs), Acta03.pdf (5 págs)
+  Al unirlas obtienes un solo PDF de 12 páginas.
+
+
+────────────────────────────────────────────────────────────────
+ 5.2  SEPARAR PDF  ✂️
+────────────────────────────────────────────────────────────────
+
+PARA QUÉ SIRVE:
+  Divide un PDF en varios archivos, ya sea página por página
+  o por rangos personalizados.
+
+PASO A PASO:
+  1. Clic en "✂️  Separar PDF".
+  2. Clic en "📂 Abrir" y selecciona el PDF.
+     El programa muestra el número de páginas del archivo.
+  3. Elige el modo de separación:
+
+     ● Una página por archivo:
+       Genera un PDF independiente por cada página.
+       Resultado: archivo_pagina_001.pdf, archivo_pagina_002.pdf...
+
+     ● Por rangos personalizados:
+       Escribe los rangos en el campo de texto.
+       FORMATO:  1-3, 4-6, 7
+       Esto genera 3 archivos:
+         Parte 1 → páginas 1 a 3
+         Parte 2 → páginas 4 a 6
+         Parte 3 → solo la página 7
+
+  4. Clic en "✂️ Separar PDF".
+  5. Selecciona la carpeta donde se guardarán los archivos.
+
+EJEMPLO DE RANGOS:
+  Un expediente de 20 páginas con 4 documentos:
+    1-5, 6-11, 12-18, 19-20
+  Genera 4 PDFs independientes.
+
+
+────────────────────────────────────────────────────────────────
+ 5.3  ELIMINAR PÁGINAS  🗑️
+────────────────────────────────────────────────────────────────
+
+PARA QUÉ SIRVE:
+  Quita páginas específicas de un PDF sin afectar las demás.
+  Las páginas restantes se renumeran automáticamente.
+
+PASO A PASO:
+  1. Clic en "🗑️  Eliminar páginas".
+  2. Clic en "📂 Abrir" y selecciona el PDF.
+  3. En el campo "Páginas a eliminar", escribe las páginas:
+       Números individuales:  1, 3, 7
+       Rangos:                5-8
+       Combinados:            1, 3, 5-8, 12
+  4. Clic en "🗑️ Eliminar y Guardar".
+  5. Elige el nombre y carpeta del archivo resultante.
+
+ADVERTENCIA:
+  Esta acción no modifica el archivo original.
+  Siempre se genera un nuevo archivo con las páginas restantes.
+
+
+────────────────────────────────────────────────────────────────
+ 5.4  REORDENAR PÁGINAS  🔀
+────────────────────────────────────────────────────────────────
+
+PARA QUÉ SIRVE:
+  Cambia el orden de las páginas de un PDF.
+
+PASO A PASO:
+  1. Clic en "🔀  Reordenar".
+  2. Clic en "📂 Abrir" y selecciona el PDF.
+     El programa carga automáticamente el orden actual:
+     (ej: 1, 2, 3, 4, 5 para un PDF de 5 páginas)
+  3. En el campo de texto, escribe el nuevo orden deseado.
+     Separa los números con comas.
+  4. Clic en "💾 Reordenar y Guardar".
+
+EJEMPLOS:
+  PDF de 4 páginas. Orden original: 1, 2, 3, 4
+
+  · Invertir todo:          4, 3, 2, 1
+  · Mover última al inicio: 4, 1, 2, 3
+  · Usar solo algunas:      2, 4         (descarta 1 y 3)
+  · Duplicar una página:    1, 1, 2, 3, 4 (pág 1 aparece dos veces)
+
+
+────────────────────────────────────────────────────────────────
+ 5.5  COMPRIMIR PDF  🗜️
+────────────────────────────────────────────────────────────────
+
+PARA QUÉ SIRVE:
+  Reduce el tamaño del archivo PDF. Especialmente útil para
+  PDFs con imágenes o documentos escaneados.
+
+PASO A PASO:
+  1. Clic en "🗜️  Comprimir".
+  2. Clic en "📂 Abrir" y selecciona el PDF.
+     Se muestra el tamaño actual en MB.
+  3. El programa indica si Ghostscript está disponible:
+       ✅ Verde → Ghostscript detectado (mejor compresión)
+       ⚠️ Naranja → Sin Ghostscript (compresión básica)
+  4. Selecciona el nivel de compresión:
+       🔴 Máxima  (72 dpi)  → Menor tamaño, calidad básica
+                               Ideal para: WhatsApp, correo electrónico
+       🟡 Alta   (150 dpi)  → Equilibrio tamaño/calidad
+                               Ideal para: lectura en pantalla (RECOMENDADO)
+       🟢 Media  (300 dpi)  → Buena calidad, poca reducción
+                               Ideal para: impresión casera
+       ⚪ Mínima (original) → Casi sin pérdida, poco ahorro
+                               Ideal para: archivo institucional
+  5. Opciones para archivos grandes (más de 200 MB):
+       ☑ Modo bajo consumo de memoria → recomendado siempre
+       ☑ Procesar en lotes            → muestra progreso real
+       Páginas por lote: 200 (puedes ajustar)
+  6. Clic en "🗜️ Comprimir y Guardar".
+  7. Si el proceso es largo puedes cancelarlo con "✖ Cancelar".
+  8. Al terminar se muestra el porcentaje de reducción logrado.
+
+NOTA: Si el PDF ya está optimizado, la reducción puede ser mínima.
+Esto es normal y el programa lo indica.
+
+
+────────────────────────────────────────────────────────────────
+ 5.6  ROTAR PÁGINAS  🔄
+────────────────────────────────────────────────────────────────
+
+PARA QUÉ SIRVE:
+  Corrige la orientación de páginas que quedaron rotadas
+  al escanear o al generar el PDF.
+
+PASO A PASO:
+  1. Clic en "🔄  Rotar páginas".
+  2. Clic en "📂 Abrir" y selecciona el PDF.
+  3. Selecciona qué páginas rotar:
+       ● Todas las páginas → rota el documento completo
+       ● Páginas específicas → escribe los números (ej: 1, 3, 5-8)
+  4. Elige el ángulo de rotación:
+       90° →   gira hacia la derecha
+       180°    voltea completamente
+       ← 90°  gira hacia la izquierda
+  5. Clic en "🔄 Rotar y Guardar".
+
+EJEMPLO:
+  Un documento escaneado en horizontal donde solo las páginas
+  2 y 5 quedaron al revés:
+    Páginas específicas: 2, 5
+    Ángulo: 180°
+
+
+────────────────────────────────────────────────────────────────
+ 5.7  FOLIACIÓN  📑
+────────────────────────────────────────────────────────────────
+
+PARA QUÉ SIRVE:
+  Estampa un número consecutivo visible en cada página del PDF.
+  Se usa en documentos oficiales, expedientes y archivos donde
+  se requiere numeración continua de folios.
+
+  Ejemplo: un expediente de 16 páginas que debe continuar la
+  numeración desde el folio 24, quedará foliado del 24 al 39.
+
+PASO A PASO:
+  1. Clic en "📑  Foliación".
+  2. Clic en "📂 Abrir" y selecciona el PDF.
+     Se muestra la cantidad de páginas del documento.
+  3. Configura las opciones:
+
+     NÚMERO INICIAL
+       El folio con el que empezará la primera página.
+       Ejemplo: si el expediente ya tiene folios del 1 al 23,
+       escribe 24 para continuar desde allí.
+
+     TAMAÑO DE FUENTE
+       Tamaño del número en puntos. Por defecto: 11.
+       Aumenta si necesitas que sea más visible.
+
+     COLOR
+       Negro  → estándar para documentos oficiales
+       Rojo   → resalta sobre documentos muy densos
+       Azul   → alternativa visible
+
+     PREFIJO (opcional)
+       Texto que aparece antes del número.
+       Déjalo vacío → solo aparece el número (ej: 24)
+       Escribe "Folio " → aparece "Folio 24"
+       Escribe "F-" → aparece "F-24"
+
+     POSICIÓN
+       Superior derecho  → esquina superior derecha (estándar)
+       Superior izquierdo
+       Inferior derecho
+       Inferior izquierdo
+
+  4. Antes de ejecutar, el programa muestra una vista previa:
+     "El documento quedará foliado del 24 al 39 (16 páginas)"
+
+  5. Clic en "📑 Aplicar Foliación".
+  6. Elige el nombre y carpeta del archivo resultante.
+  7. Al terminar se confirma el rango aplicado.
+
+NOTA: La foliación se estampa sobre el PDF como una capa de
+texto. El contenido original no se modifica. El número queda
+incrustado de forma permanente en el nuevo archivo.
+
+
+================================================================
+ 6. PREGUNTAS FRECUENTES
+================================================================
+
+P: ¿El programa modifica mis archivos originales?
+R: NO. Todas las operaciones generan un archivo NUEVO.
+   El archivo original permanece intacto.
+
+P: ¿Por qué la compresión no redujo el tamaño?
+R: Algunos PDFs ya están optimizados o contienen texto plano
+   sin imágenes. En esos casos la reducción es mínima.
+   La mayor reducción se logra en PDFs escaneados con imágenes.
+
+P: ¿Puedo cancelar una compresión larga?
+R: Sí. Solo haz clic en "✖ Cancelar" durante el proceso.
+
+P: ¿Qué pasa si escribo un rango de páginas incorrecto?
+R: El programa valida los datos y muestra un mensaje de error
+   antes de procesar. No se genera ningún archivo incompleto.
+
+P: ¿Ghostscript es obligatorio?
+R: No. Sin Ghostscript el programa funciona para todas las
+   funciones excepto la compresión de imágenes. Si solo
+   manejas PDFs de texto, no lo necesitas.
+
+P: ¿La foliación se puede deshacer?
+R: No directamente. Como se genera un archivo nuevo, simplemente
+   conserva el archivo original sin foliar y no uses el foliado
+   si necesitas corregirlo.
+
+P: ¿Cuántos archivos puedo unir a la vez?
+R: No hay límite establecido. Depende de la memoria del equipo.
+   Para expedientes de cientos de PDFs se recomienda hacerlo
+   en grupos.
+
+
+================================================================
+ 7. RECOMENDACIONES GENERALES
+================================================================
+
+  ✔ Guarda siempre el archivo resultante con un nombre
+    descriptivo (ej: Expediente_001_foliado.pdf).
+
+  ✔ Antes de foliar, verifica que el PDF ya tenga el orden
+    y contenido correcto.
+
+  ✔ Para expedientes oficiales usa la posición "Superior derecho"
+    y color "Negro" en la foliación — es la convención estándar.
+
+  ✔ Si vas a comprimir un documento importante, conserva una
+    copia del original sin comprimir.
+
+  ✔ Para PDFs muy grandes (más de 500 MB), activa las opciones
+    "Modo bajo consumo de memoria" y "Procesar en lotes" en la
+    pestaña de Comprimir.
+
+  ✔ La barra de estado en la parte inferior siempre indica qué
+    está haciendo el programa. Espera a que diga "Listo" o
+    muestre el mensaje de éxito antes de cerrar.
+
+
+================================================================
+       Cámara de Comercio de Valledupar — Uso interno
+================================================================
