@@ -87,37 +87,43 @@ def _download_file(url: str, dest: str, progress_cb=None, cancel_flag=None) -> b
         return False
 
 
-# ── Self-replace batch ────────────────────────────────────────────────────────
+# ── Self-replace script ───────────────────────────────────────────────────────
 
-def _write_replace_batch(current_exe: str, new_exe: str, pid: int) -> str:
+def _write_replace_script(current_exe: str, new_exe: str, pid: int) -> str:
     """
-    Write a .bat to %TEMP% that waits for the current process to exit,
-    copies the new exe over the old one, relaunches, and deletes itself.
-    Encoding 'mbcs' = Windows ANSI, required for cmd.exe on non-UTF8 systems.
+    Write a PowerShell script to %TEMP% that waits for the current process to
+    exit, then copies the new exe over the old one. The app is normally
+    installed under Program Files (admin-only write access), so the copy step
+    itself is elevated via 'Start-Process -Verb RunAs' — this triggers a single
+    UAC prompt just for that step, without requiring the app to run as admin
+    the rest of the time. Relaunches the app and deletes itself afterward.
     """
-    bat_path = os.path.join(tempfile.gettempdir(), "pdfmgr_update.bat")
+    ps1_path = os.path.join(tempfile.gettempdir(), "pdfmgr_update.ps1")
+    log_path = os.path.join(tempfile.gettempdir(), "pdfmgr_update.log")
+    # PowerShell single-quoted strings: escape embedded ' as ''
+    current_exe_ps = current_exe.replace("'", "''")
+    log_path_ps = log_path.replace("'", "''")
+    copy_args = f'/c copy /Y "{new_exe}" "{current_exe}"'.replace("'", "''")
+
     script = (
-        "@echo off\n"
-        "setlocal\n"
-        f"set CUR_PID={pid}\n"
-        ":wait\n"
-        f'tasklist /FI "PID eq %CUR_PID%" 2>NUL | find /I "{pid}" >NUL\n'
-        "if not errorlevel 1 (\n"
-        "    timeout /t 1 /nobreak >NUL\n"
-        "    goto wait\n"
-        ")\n"
-        "timeout /t 2 /nobreak >NUL\n"
-        f'copy /Y "{new_exe}" "{current_exe}"\n'
-        "if errorlevel 1 (\n"
-        f'    echo Error al reemplazar el ejecutable >> "%TEMP%\\pdfmgr_update.log"\n'
-        "    exit /b 1\n"
-        ")\n"
-        f'start "" "{current_exe}"\n'
-        'del "%~f0"\n'
+        f"$curPid = {pid}\n"
+        "while (Get-Process -Id $curPid -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }\n"
+        "Start-Sleep -Seconds 2\n"
+        "try {\n"
+        f"    $p = Start-Process -FilePath 'cmd.exe' -ArgumentList '{copy_args}' "
+        "-Verb RunAs -Wait -WindowStyle Hidden -PassThru\n"
+        "    if ($p.ExitCode -ne 0) { throw \"copy exited with code $($p.ExitCode)\" }\n"
+        "} catch {\n"
+        f"    \"Error al reemplazar el ejecutable: $_\" | Out-File -FilePath '{log_path_ps}' -Append\n"
+        f"    Start-Process -FilePath '{current_exe_ps}'\n"
+        "    exit 1\n"
+        "}\n"
+        f"Start-Process -FilePath '{current_exe_ps}'\n"
+        "Remove-Item -Path $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue\n"
     )
-    with open(bat_path, "w", encoding="mbcs") as fh:
+    with open(ps1_path, "w", encoding="utf-8") as fh:
         fh.write(script)
-    return bat_path
+    return ps1_path
 
 
 # ── UI helpers ────────────────────────────────────────────────────────────────
@@ -237,9 +243,10 @@ def _show_progress_dialog(root: tk.Tk, latest_version: str, download_url: str):
 
             current_exe = sys.executable
             pid = os.getpid()
-            bat = _write_replace_batch(current_exe, dest, pid)
+            ps1 = _write_replace_script(current_exe, dest, pid)
             subprocess.Popen(
-                ["cmd.exe", "/C", bat],
+                ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                 "-WindowStyle", "Hidden", "-File", ps1],
                 creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
                 close_fds=True,
             )

@@ -27,7 +27,7 @@ except ImportError:
 # ──────────────────────────────────────────────
 #  VERSION
 # ──────────────────────────────────────────────
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 
 try:
     from updater import check_for_updates
