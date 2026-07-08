@@ -8,7 +8,7 @@ echo.
 
 :: ── [1/5] Dependencias Python ────────────────────────────────────────────────
 echo  [1/5] Instalando dependencias Python...
-pip install pypdf pillow pyinstaller reportlab requests --quiet
+pip install pypdf cryptography pillow pyinstaller reportlab requests --quiet
 if errorlevel 1 (
     echo  ERROR: Fallo instalando dependencias.
     pause & exit /b 1

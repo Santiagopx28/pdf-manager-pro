@@ -8,7 +8,7 @@
 ; ============================================================
 
 #define AppName      "PDF Manager Pro"
-#define AppVersion   "1.0.0"
+#define AppVersion   "1.1.0"
 #define AppPublisher "Cámara de Comercio de Valledupar"
 #define AppURL       "https://ccvalledupar.org.co"
 #define AppExeName   "PDF Manager Pro - CCV.exe"

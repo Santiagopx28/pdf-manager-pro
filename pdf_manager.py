@@ -19,6 +19,7 @@ from pypdf import PdfReader, PdfWriter
 
 try:
     from reportlab.pdfgen import canvas as rl_canvas
+    from reportlab.lib.units import cm as CM_TO_PT
     HAS_REPORTLAB = True
 except ImportError:
     HAS_REPORTLAB = False
@@ -26,7 +27,7 @@ except ImportError:
 # ──────────────────────────────────────────────
 #  VERSION
 # ──────────────────────────────────────────────
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 try:
     from updater import check_for_updates
@@ -207,7 +208,7 @@ class PDFManagerApp(tk.Tk):
         b.bind("<Leave>", lambda e: b.config(bg=color))
         return b
 
-    def _listbox(self, parent, height=8):
+    def _listbox(self, parent, height=8, expand=True):
         frame = tk.Frame(parent, bg=BORDER, bd=1)
         sb = tk.Scrollbar(frame, bg=PANEL)
         lb = tk.Listbox(frame, selectmode="extended", bg="#1A1A2E",
@@ -218,7 +219,7 @@ class PDFManagerApp(tk.Tk):
         sb.config(command=lb.yview)
         sb.pack(side="right", fill="y")
         lb.pack(fill="both", expand=True, padx=2, pady=2)
-        frame.pack(fill="both", expand=True, padx=16, pady=8)
+        frame.pack(fill="both" if expand else "x", expand=expand, padx=16, pady=(2, 4) if not expand else 8)
         return lb
 
     def _set_status(self, msg, color=SUBTEXT):
@@ -1292,11 +1293,11 @@ class PDFManagerApp(tk.Tk):
 
         # ── Selector de archivo ──────────────────
         top = tk.Frame(card, bg=PANEL)
-        top.pack(fill="x", padx=16, pady=(14, 4))
+        top.pack(fill="x", padx=16, pady=(8, 2))
         tk.Label(top, text="Archivo PDF:", bg=PANEL, fg=SUBTEXT,
                  font=("Segoe UI", 9)).pack(anchor="w")
         row = tk.Frame(top, bg=PANEL)
-        row.pack(fill="x", pady=4)
+        row.pack(fill="x", pady=2)
         self.fol_path = tk.StringVar()
         tk.Entry(row, textvariable=self.fol_path, state="readonly",
                  bg="#1A1A2E", fg=TEXT, relief="flat", font=("Segoe UI", 10),
@@ -1306,7 +1307,7 @@ class PDFManagerApp(tk.Tk):
         self.fol_info = tk.Label(card, text="", bg=PANEL, fg=ACCENT2, font=("Segoe UI", 9))
         self.fol_info.pack(anchor="w", padx=16)
 
-        tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=10)
+        tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=4)
 
         # ── Opciones ─────────────────────────────
         opts = tk.Frame(card, bg=PANEL)
@@ -1328,7 +1329,7 @@ class PDFManagerApp(tk.Tk):
 
         # Tamaño de fuente
         col2 = tk.Frame(opts, bg=PANEL)
-        col2.pack(side="left", padx=(0, 28))
+        col2.pack(side="left")
         tk.Label(col2, text="Tamaño de fuente:", bg=PANEL, fg=SUBTEXT,
                  font=("Segoe UI", 9)).pack(anchor="w")
         self.fol_fontsize = tk.IntVar(value=11)
@@ -1337,36 +1338,13 @@ class PDFManagerApp(tk.Tk):
                    bg="#1A1A2E", fg=TEXT, insertbackground=TEXT,
                    buttonbackground=PANEL, relief="flat", font=("Segoe UI", 11)).pack(ipady=5, pady=2)
 
-        # Color
-        col3 = tk.Frame(opts, bg=PANEL)
-        col3.pack(side="left", padx=(0, 28))
-        tk.Label(col3, text="Color:", bg=PANEL, fg=SUBTEXT,
-                 font=("Segoe UI", 9)).pack(anchor="w")
-        self.fol_color = tk.StringVar(value="Negro")
-        ttk.Combobox(col3, textvariable=self.fol_color,
-                     values=["Negro", "Rojo", "Azul"],
-                     state="readonly", width=9,
-                     font=("Segoe UI", 10)).pack(pady=2, ipady=3)
-
-        # Prefijo
-        col4 = tk.Frame(opts, bg=PANEL)
-        col4.pack(side="left")
-        tk.Label(col4, text="Prefijo (opcional):", bg=PANEL, fg=SUBTEXT,
-                 font=("Segoe UI", 9)).pack(anchor="w")
-        self.fol_prefix = tk.StringVar(value="")
-        pref = tk.Entry(col4, textvariable=self.fol_prefix, width=10,
-                        bg="#1A1A2E", fg=TEXT, insertbackground=TEXT,
-                        relief="flat", font=("Segoe UI", 11))
-        pref.pack(ipady=5, pady=2)
-        Tooltip(pref, "Ej: 'Folio ' → se mostrará 'Folio 24'.\nDéjalo vacío para solo el número.")
-
-        tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=10)
+        tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=4)
 
         # ── Posición ──────────────────────────────
         tk.Label(card, text="Posición en la página:", bg=PANEL, fg=SUBTEXT,
                  font=("Segoe UI", 9)).pack(anchor="w", padx=16)
         pos_f = tk.Frame(card, bg=PANEL)
-        pos_f.pack(anchor="w", padx=16, pady=4)
+        pos_f.pack(anchor="w", padx=16, pady=2)
         self.fol_position = tk.StringVar(value="top-right")
         for val, lbl in [
             ("top-right",    "Superior derecho"),
@@ -1378,14 +1356,47 @@ class PDFManagerApp(tk.Tk):
                            bg=PANEL, fg=TEXT, selectcolor=ACCENT, activebackground=PANEL,
                            font=("Segoe UI", 10)).pack(side="left", padx=(0, 16))
 
-        tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=10)
+        tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=4)
+
+        # ── Ajuste por página específica ──────────
+        self._fol_overrides = []
+        ov_add_f = tk.Frame(card, bg=PANEL)
+        ov_add_f.pack(anchor="w", padx=16, pady=(2, 2))
+
+        tk.Label(ov_add_f, text="Excepción — página:", bg=PANEL, fg=SUBTEXT,
+                 font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
+        self.fol_ov_page = tk.IntVar(value=1)
+        tk.Spinbox(ov_add_f, from_=1, to=99999, increment=1,
+                   textvariable=self.fol_ov_page, width=5,
+                   bg="#1A1A2E", fg=TEXT, insertbackground=TEXT,
+                   buttonbackground=PANEL, relief="flat", font=("Segoe UI", 11)).pack(side="left", ipady=3, padx=(0, 10))
+
+        tk.Label(ov_add_f, text="ajuste (cm):", bg=PANEL, fg=SUBTEXT,
+                 font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
+        self.fol_ov_offset_cm = tk.DoubleVar(value=0.0)
+        tk.Spinbox(ov_add_f, from_=-5.0, to=5.0, increment=0.1, format="%.1f",
+                   textvariable=self.fol_ov_offset_cm, width=5,
+                   bg="#1A1A2E", fg=TEXT, insertbackground=TEXT,
+                   buttonbackground=PANEL, relief="flat", font=("Segoe UI", 11)).pack(side="left", ipady=3, padx=(0, 10))
+
+        add_btn = self._btn(ov_add_f, "Agregar", self._foliate_override_add, color="#475569", icon="➕")
+        add_btn.pack(side="left", padx=(0, 4))
+        Tooltip(add_btn,
+                "Corre el folio hacia la izquierda (negativo) o derecha (positivo)\n"
+                "solo en la página indicada. Útil cuando un sello institucional\n"
+                "tapa la numeración en una página puntual.")
+        self._btn(ov_add_f, "Quitar", self._foliate_override_remove, color=DANGER).pack(side="left")
+
+        self.fol_overrides_lb = self._listbox(card, height=2, expand=False)
+
+        tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=4)
 
         self.fol_preview = tk.Label(card,
                                     text="Selecciona un PDF para ver el rango de foliación.",
                                     bg=PANEL, fg=SUBTEXT, font=("Segoe UI", 9, "italic"))
-        self.fol_preview.pack(anchor="w", padx=16, pady=(0, 8))
+        self.fol_preview.pack(anchor="w", padx=16, pady=(0, 4))
 
-        self._btn(card, "Aplicar Foliación", self._foliate_run, icon="📑").pack(anchor="w", padx=16, pady=(0, 16))
+        self._btn(card, "Aplicar Foliación", self._foliate_run, icon="📑").pack(anchor="w", padx=16, pady=(0, 10))
 
     def _foliate_open(self):
         f = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
@@ -1409,6 +1420,39 @@ class PDFManagerApp(tk.Tk):
         except (tk.TclError, ValueError):
             pass
 
+    def _foliate_override_add(self):
+        try:
+            page = int(self.fol_ov_page.get())
+        except (tk.TclError, ValueError):
+            messagebox.showerror("Error", "La página debe ser un número entero válido.")
+            return
+        try:
+            offset_cm = float(self.fol_ov_offset_cm.get())
+        except (tk.TclError, ValueError):
+            messagebox.showerror("Error", "El ajuste debe ser un número válido.")
+            return
+
+        if page < 1:
+            messagebox.showerror("Error", "La página debe ser mayor o igual a 1.")
+            return
+        total = getattr(self, "_fol_total_pages", None)
+        if total and page > total:
+            messagebox.showerror("Error",
+                f"La página {page} no existe. El documento cargado solo tiene {total} página(s).")
+            return
+        if any(p == page for p, _ in self._fol_overrides):
+            messagebox.showwarning("Aviso",
+                f"Ya existe un ajuste para la página {page}. Quítalo primero si quieres cambiarlo.")
+            return
+
+        self._fol_overrides.append((page, offset_cm))
+        self.fol_overrides_lb.insert("end", f"Página {page}  →  {offset_cm:+.1f} cm")
+
+    def _foliate_override_remove(self):
+        for i in reversed(self.fol_overrides_lb.curselection()):
+            self.fol_overrides_lb.delete(i)
+            del self._fol_overrides[i]
+
     def _foliate_run(self):
         path = self.fol_path.get()
         if not path:
@@ -1427,12 +1471,9 @@ class PDFManagerApp(tk.Tk):
             return
 
         font_size  = self.fol_fontsize.get()
-        color_name = self.fol_color.get()
-        prefix     = self.fol_prefix.get()
         position   = self.fol_position.get()
-        color_map  = {"Negro": (0, 0, 0), "Rojo": (0.8, 0, 0), "Azul": (0, 0.2, 0.8)}
-        rgb        = color_map.get(color_name, (0, 0, 0))
         margin     = 22
+        overrides  = dict(self._fol_overrides)
 
         def do():
             try:
@@ -1441,25 +1482,31 @@ class PDFManagerApp(tk.Tk):
                 total  = reader.get_num_pages()
 
                 for i in range(total):
-                    page  = reader.pages[i]
+                    page = reader.pages[i]
+                    # Hornea cualquier /Rotate existente en el contenido de la
+                    # página (deja /Rotate=0) para que el folio siempre caiga
+                    # en la esquina visual correcta, sin importar si la página
+                    # venía rotada (común en escaneos).
+                    page.transfer_rotation_to_content()
                     w     = float(page.mediabox.width)
                     h     = float(page.mediabox.height)
-                    label = f"{prefix}{start + i}"
+                    label = f"{start + i}"
+                    x_shift = overrides.get(i + 1, 0.0) * CM_TO_PT
 
                     # Capa con el folio generada por reportlab
                     packet = io.BytesIO()
                     c = rl_canvas.Canvas(packet, pagesize=(w, h))
-                    c.setFillColorRGB(*rgb)
+                    c.setFillColorRGB(0, 0, 0)
                     c.setFont("Helvetica-Bold", font_size)
 
                     if position == "top-right":
-                        c.drawRightString(w - margin, h - margin - font_size, label)
+                        c.drawRightString(w - margin + x_shift, h - margin - font_size, label)
                     elif position == "top-left":
-                        c.drawString(margin, h - margin - font_size, label)
+                        c.drawString(margin + x_shift, h - margin - font_size, label)
                     elif position == "bottom-right":
-                        c.drawRightString(w - margin, margin + 4, label)
+                        c.drawRightString(w - margin + x_shift, margin + 4, label)
                     else:
-                        c.drawString(margin, margin + 4, label)
+                        c.drawString(margin + x_shift, margin + 4, label)
 
                     c.save()
                     packet.seek(0)

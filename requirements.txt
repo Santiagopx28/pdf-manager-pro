@@ -1,4 +1,5 @@
 pypdf
+cryptography
 pillow
 pyinstaller
 reportlab
