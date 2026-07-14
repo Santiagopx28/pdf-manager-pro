@@ -5,11 +5,11 @@ Checks GitHub Releases on startup (background thread) and offers in-place replac
 
 import os
 import sys
+import ctypes
 import threading
 import tempfile
-import subprocess
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 try:
     import requests
@@ -92,38 +92,66 @@ def _download_file(url: str, dest: str, progress_cb=None, cancel_flag=None) -> b
 def _write_replace_script(current_exe: str, new_exe: str, pid: int) -> str:
     """
     Write a PowerShell script to %TEMP% that waits for the current process to
-    exit, then copies the new exe over the old one. The app is normally
-    installed under Program Files (admin-only write access), so the copy step
-    itself is elevated via 'Start-Process -Verb RunAs' — this triggers a single
-    UAC prompt just for that step, without requiring the app to run as admin
-    the rest of the time. Relaunches the app and deletes itself afterward.
+    exit, then copies the new exe over the old one and relaunches it. The
+    script itself is launched already elevated (via ShellExecuteW 'runas' in
+    _run_elevated, called *before* this process closes — see _apply), so it
+    performs the copy directly instead of re-requesting elevation for a
+    sub-step. Every step is logged to pdfmgr_update.log since this process is
+    detached and hidden — nothing else would surface a silent failure.
     """
     ps1_path = os.path.join(tempfile.gettempdir(), "pdfmgr_update.ps1")
     log_path = os.path.join(tempfile.gettempdir(), "pdfmgr_update.log")
     # PowerShell single-quoted strings: escape embedded ' as ''
     current_exe_ps = current_exe.replace("'", "''")
-    log_path_ps = log_path.replace("'", "''")
-    copy_args = f'/c copy /Y "{new_exe}" "{current_exe}"'.replace("'", "''")
+    new_exe_ps      = new_exe.replace("'", "''")
+    log_path_ps     = log_path.replace("'", "''")
 
     script = (
         f"$curPid = {pid}\n"
-        "while (Get-Process -Id $curPid -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }\n"
-        "Start-Sleep -Seconds 2\n"
+        f"$logPath = '{log_path_ps}'\n"
+        "function Log($msg) { \"$(Get-Date -Format 'HH:mm:ss')  $msg\" | "
+        "Out-File -FilePath $logPath -Append -Encoding utf8 }\n"
+        "Log 'Helper elevado iniciado.'\n"
+        "$deadline = (Get-Date).AddSeconds(60)\n"
+        "while ((Get-Process -Id $curPid -ErrorAction SilentlyContinue) -and "
+        "((Get-Date) -lt $deadline)) { Start-Sleep -Milliseconds 500 }\n"
+        "Start-Sleep -Seconds 1\n"
+        "Log 'Proceso original cerrado (o se agoto la espera). Copiando ejecutable...'\n"
         "try {\n"
-        f"    $p = Start-Process -FilePath 'cmd.exe' -ArgumentList '{copy_args}' "
-        "-Verb RunAs -Wait -WindowStyle Hidden -PassThru\n"
-        "    if ($p.ExitCode -ne 0) { throw \"copy exited with code $($p.ExitCode)\" }\n"
+        f"    Copy-Item -LiteralPath '{new_exe_ps}' -Destination '{current_exe_ps}' -Force\n"
+        "    Log 'Copia aplicada correctamente.'\n"
         "} catch {\n"
-        f"    \"Error al reemplazar el ejecutable: $_\" | Out-File -FilePath '{log_path_ps}' -Append\n"
-        f"    Start-Process -FilePath '{current_exe_ps}'\n"
-        "    exit 1\n"
+        "    Log \"ERROR al copiar: $_\"\n"
         "}\n"
-        f"Start-Process -FilePath '{current_exe_ps}'\n"
+        "try {\n"
+        f"    Start-Process -FilePath '{current_exe_ps}'\n"
+        "    Log 'Aplicacion relanzada.'\n"
+        "} catch {\n"
+        "    Log \"ERROR al relanzar: $_\"\n"
+        "}\n"
+        f"Remove-Item -LiteralPath '{new_exe_ps}' -Force -ErrorAction SilentlyContinue\n"
         "Remove-Item -Path $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue\n"
     )
     with open(ps1_path, "w", encoding="utf-8") as fh:
         fh.write(script)
     return ps1_path
+
+
+# ── Elevación ─────────────────────────────────────────────────────────────────
+
+def _run_elevated(exe: str, params: str) -> bool:
+    """
+    Lanza exe con permisos de administrador (UAC) vía ShellExecuteW('runas', ...).
+    Devuelve True si el usuario aceptó el UAC y el proceso se lanzó; False si
+    lo canceló/denegó o hubo un error (ShellExecuteW devuelve <= 32 en error,
+    ver documentación de Win32 ShellExecute).
+    """
+    SW_HIDE = 0
+    try:
+        result = ctypes.windll.shell32.ShellExecuteW(None, "runas", exe, params, None, SW_HIDE)
+        return int(result) > 32
+    except Exception:
+        return False
 
 
 # ── UI helpers ────────────────────────────────────────────────────────────────
@@ -244,12 +272,26 @@ def _show_progress_dialog(root: tk.Tk, latest_version: str, download_url: str):
             current_exe = sys.executable
             pid = os.getpid()
             ps1 = _write_replace_script(current_exe, dest, pid)
-            subprocess.Popen(
-                ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
-                 "-WindowStyle", "Hidden", "-File", ps1],
-                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
-                close_fds=True,
-            )
+
+            # Pedimos el permiso de administrador (UAC) AHORA, mientras la
+            # ventana todavía está visible y enfocada, en vez de recién
+            # segundos después de que la app ya se cerró — así el aviso de
+            # Windows tiene contexto y no pasa desapercibido, y si el usuario
+            # lo cancela lo vemos aquí mismo en lugar de fallar en silencio.
+            status_var.set("Esperando confirmación de administrador (UAC)…")
+            dlg.update_idletasks()
+
+            params = f'-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{ps1}"'
+            if not _run_elevated("powershell.exe", params):
+                dlg.destroy()
+                messagebox.showerror(
+                    "Actualización cancelada",
+                    "No se pudo aplicar la actualización porque no se concedió "
+                    "el permiso de administrador solicitado (UAC).\n\n"
+                    "La aplicación sigue funcionando con la versión actual. "
+                    "Puedes intentarlo de nuevo desde el aviso de actualización.")
+                return
+
             dlg.destroy()
             root.after(300, root.destroy)
 
