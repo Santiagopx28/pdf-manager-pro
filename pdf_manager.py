@@ -27,7 +27,7 @@ except ImportError:
 # ──────────────────────────────────────────────
 #  VERSION
 # ──────────────────────────────────────────────
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 
 try:
     from updater import check_for_updates
@@ -139,6 +139,7 @@ class PDFManagerApp(tk.Tk):
         self.frames = {}
         tabs = [
             ("🔗  Unir PDFs",       "merge",    self._build_merge),
+            ("⚫  Blanco y Negro",  "bw",       self._build_bw),
             ("✂️  Separar PDF",     "split",    self._build_split),
             ("🗑️  Eliminar páginas","delete",   self._build_delete),
             ("🔀  Reordenar",       "reorder",  self._build_reorder),
@@ -261,6 +262,8 @@ class PDFManagerApp(tk.Tk):
         action_row = tk.Frame(card, bg=PANEL)
         action_row.pack(fill="x", padx=16, pady=(0, 16))
         self._btn(action_row, "Unir y Guardar", self._merge_run, icon="💾").pack(side="left")
+        self._btn(action_row, "Convertir a Blanco y Negro",
+                  lambda: self._show_tab("bw"), color="#475569", icon="⚫").pack(side="left", padx=(10, 0))
 
     def _merge_add(self):
         files = filedialog.askopenfilenames(filetypes=[("PDF", "*.pdf")])
@@ -315,6 +318,87 @@ class PDFManagerApp(tk.Tk):
                 self.after(0, lambda: messagebox.showinfo("✅ Éxito",
                     f"PDF unido correctamente.\n{len(items)} archivos · {total} páginas\n\n{out}"))
                 self._set_status(f"PDF unido: {Path(out).name}")
+            except Exception as e:
+                self.after(0, lambda: messagebox.showerror("Error", str(e)))
+        self._run_threaded(do)
+
+    # ══════════════════════════════════════════════
+    #  TAB 1B – BLANCO Y NEGRO (escala de grises)
+    # ══════════════════════════════════════════════
+    def _build_bw(self, parent):
+        _, card = self._card(parent,
+            "⚫  Blanco y Negro",
+            "Convierte todo el contenido del PDF (texto e imágenes) a escala de grises")
+
+        top = tk.Frame(card, bg=PANEL)
+        top.pack(fill="x", padx=16, pady=(14, 4))
+        tk.Label(top, text="Archivo PDF:", bg=PANEL, fg=SUBTEXT, font=("Segoe UI", 9)).pack(anchor="w")
+        row = tk.Frame(top, bg=PANEL)
+        row.pack(fill="x", pady=4)
+        self.bw_path = tk.StringVar()
+        tk.Entry(row, textvariable=self.bw_path, state="readonly",
+                 bg="#1A1A2E", fg=TEXT, relief="flat", font=("Segoe UI", 10),
+                 readonlybackground="#1A1A2E").pack(side="left", fill="x", expand=True, ipady=6, padx=(0, 8))
+        self._btn(row, "Abrir", self._bw_open, icon="📂").pack(side="left")
+
+        self.bw_info = tk.Label(card, text="", bg=PANEL, fg=ACCENT2, font=("Segoe UI", 9))
+        self.bw_info.pack(anchor="w", padx=16)
+
+        tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=10)
+
+        gs = self._find_ghostscript()
+        gs_color = SUCCESS if gs else WARNING
+        gs_msg   = ("✅  Ghostscript detectado — conversión a blanco y negro disponible"
+                    if gs else
+                    "⚠️  Ghostscript NO instalado. Esta función lo requiere para convertir\n"
+                    "    texto e imágenes a escala de grises de forma fiel.\n"
+                    "    Descárgalo gratis: ghostscript.com/releases  (~30 MB)")
+        tk.Label(card, text=gs_msg, bg=PANEL, fg=gs_color,
+                 font=("Segoe UI", 9), wraplength=530, justify="left").pack(anchor="w", padx=16)
+
+        tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=10)
+
+        self.bw_run_btn = self._btn(card, "Convertir y Guardar", self._bw_run, icon="⚫")
+        self.bw_run_btn.pack(anchor="w", padx=16, pady=(0, 16))
+        if not gs:
+            self.bw_run_btn.config(state="disabled")
+
+    def _bw_open(self):
+        f = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
+        if f:
+            self.bw_path.set(f)
+            n = PdfReader(f).get_num_pages()
+            self.bw_info.config(text=f"  📄 {n} páginas  ·  {Path(f).name}")
+
+    def _bw_run(self):
+        path = self.bw_path.get()
+        if not path:
+            messagebox.showwarning("Aviso", "Selecciona un archivo PDF.")
+            return
+        gs = self._find_ghostscript()
+        if not gs:
+            messagebox.showerror("Error", "Ghostscript no está instalado. Es necesario para esta función.")
+            return
+        out = filedialog.asksaveasfilename(defaultextension=".pdf",
+                                           filetypes=[("PDF", "*.pdf")],
+                                           title="Guardar PDF en blanco y negro como...")
+        if not out:
+            return
+
+        def do():
+            try:
+                cmd = [
+                    gs, "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.4",
+                    "-sColorConversionStrategy=Gray", "-dProcessColorModel=/DeviceGray",
+                    "-dNOPAUSE", "-dBATCH",
+                    f"-sOutputFile={out}", path,
+                ]
+                result = subprocess.run(cmd, capture_output=True)
+                if result.returncode != 0:
+                    raise RuntimeError(f"Ghostscript error:\n{result.stderr.decode(errors='replace')}")
+                self.after(0, lambda: messagebox.showinfo("✅ Éxito",
+                    f"PDF convertido a blanco y negro correctamente.\n\n{out}"))
+                self._set_status(f"Convertido a blanco y negro: {Path(out).name}")
             except Exception as e:
                 self.after(0, lambda: messagebox.showerror("Error", str(e)))
         self._run_threaded(do)
@@ -1358,20 +1442,21 @@ class PDFManagerApp(tk.Tk):
 
         tk.Frame(card, bg=BORDER, height=1).pack(fill="x", padx=16, pady=4)
 
-        # ── Ajuste por página específica ──────────
+        # ── Ajuste por página específica o rango ──
         self._fol_overrides = []
         ov_add_f = tk.Frame(card, bg=PANEL)
         ov_add_f.pack(anchor="w", padx=16, pady=(2, 2))
 
-        tk.Label(ov_add_f, text="Excepción — página:", bg=PANEL, fg=SUBTEXT,
+        tk.Label(ov_add_f, text="Excepción — página(s):", bg=PANEL, fg=SUBTEXT,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
-        self.fol_ov_page = tk.IntVar(value=1)
-        tk.Spinbox(ov_add_f, from_=1, to=99999, increment=1,
-                   textvariable=self.fol_ov_page, width=5,
-                   bg="#1A1A2E", fg=TEXT, insertbackground=TEXT,
-                   buttonbackground=PANEL, relief="flat", font=("Segoe UI", 11)).pack(side="left", ipady=3, padx=(0, 10))
+        self.fol_ov_range = tk.StringVar(value="1")
+        ov_range_entry = tk.Entry(ov_add_f, textvariable=self.fol_ov_range, width=8,
+                                  bg="#1A1A2E", fg=TEXT, insertbackground=TEXT,
+                                  relief="flat", font=("Segoe UI", 11))
+        ov_range_entry.pack(side="left", ipady=4, padx=(0, 10))
+        Tooltip(ov_range_entry, "Una página (ej: 4) o un rango (ej: 4-8)")
 
-        tk.Label(ov_add_f, text="ajuste (cm):", bg=PANEL, fg=SUBTEXT,
+        tk.Label(ov_add_f, text="horiz. (cm):", bg=PANEL, fg=SUBTEXT,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self.fol_ov_offset_cm = tk.DoubleVar(value=0.0)
         tk.Spinbox(ov_add_f, from_=-5.0, to=5.0, increment=0.1, format="%.1f",
@@ -1379,13 +1464,25 @@ class PDFManagerApp(tk.Tk):
                    bg="#1A1A2E", fg=TEXT, insertbackground=TEXT,
                    buttonbackground=PANEL, relief="flat", font=("Segoe UI", 11)).pack(side="left", ipady=3, padx=(0, 10))
 
-        add_btn = self._btn(ov_add_f, "Agregar", self._foliate_override_add, color="#475569", icon="➕")
+        tk.Label(ov_add_f, text="vert. (cm):", bg=PANEL, fg=SUBTEXT,
+                 font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
+        self.fol_ov_offset_y_cm = tk.DoubleVar(value=0.0)
+        tk.Spinbox(ov_add_f, from_=-5.0, to=5.0, increment=0.1, format="%.1f",
+                   textvariable=self.fol_ov_offset_y_cm, width=5,
+                   bg="#1A1A2E", fg=TEXT, insertbackground=TEXT,
+                   buttonbackground=PANEL, relief="flat", font=("Segoe UI", 11)).pack(side="left", ipady=3, padx=(0, 10))
+
+        ov_btn_f = tk.Frame(card, bg=PANEL)
+        ov_btn_f.pack(anchor="w", padx=16, pady=(0, 2))
+        add_btn = self._btn(ov_btn_f, "Agregar", self._foliate_override_add, color="#475569", icon="➕")
         add_btn.pack(side="left", padx=(0, 4))
         Tooltip(add_btn,
-                "Corre el folio hacia la izquierda (negativo) o derecha (positivo)\n"
-                "solo en la página indicada. Útil cuando un sello institucional\n"
-                "tapa la numeración en una página puntual.")
-        self._btn(ov_add_f, "Quitar", self._foliate_override_remove, color=DANGER).pack(side="left")
+                "Corre el folio horizontalmente (izquierda = negativo, derecha = positivo)\n"
+                "y/o verticalmente (arriba = positivo, abajo = negativo) en la página\n"
+                "o rango de páginas indicado. Útil cuando un sello institucional tapa\n"
+                "la numeración, o para aplicar el mismo ajuste a varias páginas a la vez\n"
+                "(ej: 4-8 → 1 cm a la izquierda).")
+        self._btn(ov_btn_f, "Quitar", self._foliate_override_remove, color=DANGER).pack(side="left")
 
         self.fol_overrides_lb = self._listbox(card, height=2, expand=False)
 
@@ -1421,32 +1518,49 @@ class PDFManagerApp(tk.Tk):
             pass
 
     def _foliate_override_add(self):
-        try:
-            page = int(self.fol_ov_page.get())
-        except (tk.TclError, ValueError):
-            messagebox.showerror("Error", "La página debe ser un número entero válido.")
+        range_text = self.fol_ov_range.get().strip()
+        if not range_text:
+            messagebox.showerror("Error", "Escribe una página (ej: 4) o un rango de páginas (ej: 4-8).")
             return
         try:
-            offset_cm = float(self.fol_ov_offset_cm.get())
+            if "-" in range_text:
+                a, b = range_text.split("-", 1)
+                start, end = int(a.strip()), int(b.strip())
+            else:
+                start = end = int(range_text.strip())
+        except ValueError:
+            messagebox.showerror("Error", "Formato inválido. Usa una página (ej: 4) o un rango (ej: 4-8).")
+            return
+        if start > end:
+            start, end = end, start
+        if start < 1:
+            messagebox.showerror("Error", "La página debe ser mayor o igual a 1.")
+            return
+        total = getattr(self, "_fol_total_pages", None)
+        if total and end > total:
+            messagebox.showerror("Error",
+                f"La página {end} no existe. El documento cargado solo tiene {total} página(s).")
+            return
+
+        try:
+            dx = float(self.fol_ov_offset_cm.get())
+            dy = float(self.fol_ov_offset_y_cm.get())
         except (tk.TclError, ValueError):
             messagebox.showerror("Error", "El ajuste debe ser un número válido.")
             return
 
-        if page < 1:
-            messagebox.showerror("Error", "La página debe ser mayor o igual a 1.")
-            return
-        total = getattr(self, "_fol_total_pages", None)
-        if total and page > total:
-            messagebox.showerror("Error",
-                f"La página {page} no existe. El documento cargado solo tiene {total} página(s).")
-            return
-        if any(p == page for p, _ in self._fol_overrides):
-            messagebox.showwarning("Aviso",
-                f"Ya existe un ajuste para la página {page}. Quítalo primero si quieres cambiarlo.")
-            return
+        for ov in self._fol_overrides:
+            if start <= ov["end"] and ov["start"] <= end:
+                overlap = (f"{ov['start']}" if ov["start"] == ov["end"]
+                           else f"{ov['start']}-{ov['end']}")
+                messagebox.showwarning("Aviso",
+                    f"Ya existe un ajuste que se superpone con la página(s) {overlap}. "
+                    "Quítalo primero si quieres cambiarlo.")
+                return
 
-        self._fol_overrides.append((page, offset_cm))
-        self.fol_overrides_lb.insert("end", f"Página {page}  →  {offset_cm:+.1f} cm")
+        self._fol_overrides.append({"start": start, "end": end, "dx": dx, "dy": dy})
+        label = f"Página {start}" if start == end else f"Páginas {start}–{end}"
+        self.fol_overrides_lb.insert("end", f"{label}  →  x: {dx:+.1f} cm, y: {dy:+.1f} cm")
 
     def _foliate_override_remove(self):
         for i in reversed(self.fol_overrides_lb.curselection()):
@@ -1473,7 +1587,7 @@ class PDFManagerApp(tk.Tk):
         font_size  = self.fol_fontsize.get()
         position   = self.fol_position.get()
         margin     = 22
-        overrides  = dict(self._fol_overrides)
+        overrides  = list(self._fol_overrides)
 
         def do():
             try:
@@ -1491,7 +1605,13 @@ class PDFManagerApp(tk.Tk):
                     w     = float(page.mediabox.width)
                     h     = float(page.mediabox.height)
                     label = f"{start + i}"
-                    x_shift = overrides.get(i + 1, 0.0) * CM_TO_PT
+                    dx_cm, dy_cm = 0.0, 0.0
+                    for ov in overrides:
+                        if ov["start"] <= (i + 1) <= ov["end"]:
+                            dx_cm, dy_cm = ov["dx"], ov["dy"]
+                            break
+                    x_shift = dx_cm * CM_TO_PT
+                    y_shift = dy_cm * CM_TO_PT
 
                     # Capa con el folio generada por reportlab
                     packet = io.BytesIO()
@@ -1500,13 +1620,13 @@ class PDFManagerApp(tk.Tk):
                     c.setFont("Helvetica-Bold", font_size)
 
                     if position == "top-right":
-                        c.drawRightString(w - margin + x_shift, h - margin - font_size, label)
+                        c.drawRightString(w - margin + x_shift, h - margin - font_size + y_shift, label)
                     elif position == "top-left":
-                        c.drawString(margin + x_shift, h - margin - font_size, label)
+                        c.drawString(margin + x_shift, h - margin - font_size + y_shift, label)
                     elif position == "bottom-right":
-                        c.drawRightString(w - margin + x_shift, margin + 4, label)
+                        c.drawRightString(w - margin + x_shift, margin + 4 + y_shift, label)
                     else:
-                        c.drawString(margin + x_shift, margin + 4, label)
+                        c.drawString(margin + x_shift, margin + 4 + y_shift, label)
 
                     c.save()
                     packet.seek(0)
